@@ -1,14 +1,48 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
+}
+
+// 用户表 (护工、院长)
+model User {
+  id        String   @id @default(cuid())  // ← 改 cuid()
+  email     String   @unique
+  password  String
+  role      String   @default("caregiver")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  careRecords CareRecord[]
+}
+
+// 老人表 (患者)
+model Elder {
+  id        String   @id @default(cuid())  // ← 改 cuid()
+  name      String
+  age       Int
+  gender    String   @default("unknown")
+  room      String
+  phone     String?
+  emergencyContact String?
+  medicalHistory String?
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  careRecords CareRecord[]
+}
+
+// 护理记录表
+model CareRecord {
+  id          String   @id @default(cuid())
+  content     String
+  type        String   @default("normal")
+  createdAt   DateTime @default(now())
+  
+  elderId     String
+  elder       Elder    @relation(fields: [elderId], references: [id],onDelete: Cascade)
+  
+  caregiverId String
+  caregiver   User     @relation(fields: [caregiverId], references: [id],onDelete: Cascade)
 }
