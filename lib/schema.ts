@@ -34,3 +34,11 @@ export const careRecords = sqliteTable('care_records', {
   elderId: text('elder_id').notNull().references(() => elders.id, { onDelete: 'cascade' }),
   caregiverId: text('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 })
+
+// Session 表
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull(),
+})
