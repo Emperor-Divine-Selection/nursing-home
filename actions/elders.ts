@@ -2,8 +2,6 @@
 
 import { db } from "@/lib/db"
 import { elders } from "@/lib/schema"
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 import { eq } from "drizzle-orm"
 
 
@@ -26,8 +24,7 @@ export async function addElder(formData: FormData) {
     dischargedAt: null,  // ✅ 明确 null
     createdAt: new Date().toISOString(),   // ✅ 转 string
     updatedAt: new Date().toISOString(),   // ✅ 转 string
-  }),
-    revalidatePath('/dashboard/elders')
+  })
     return {success: true,message: '添加成功'}
   }catch (error) {
     console.error('添加失败:', error);
@@ -42,7 +39,6 @@ export async function deleteElder(id: string) {
 
   try {
     await db.delete(elders).where(eq(elders.id, id));
-    revalidatePath('/dashboard/elders');
     return { success: true,message:'删除成功' };
   } catch (error) {
     console.error('删除失败:', error);
@@ -70,7 +66,6 @@ export async function updateElder(id: string, data: {
   await db.update(elders)
     .set({ ...data, updatedAt: new Date().toISOString() })
     .where(eq(elders.id, id));
-    revalidatePath('/dashboard/elders');
     return { success: true,message:'更新成功' };
   }catch(error){
     console.error('更新失败:', error);
