@@ -15,7 +15,7 @@ export async function addElder(formData: FormData) {
     age: Number(formData.get('age')),      // ✅ 转 number
     gender: (formData.get('gender') as string) || 'unknown',  // ✅ 默认值
     room: formData.get('room') as string,  // ✅ 断言
-    bedId: formData.get('bedId') as string || null,  // ✅ 可 null
+    bedId: (formData.get('bedId') as string) || null,  // ✅ 可 null
     phone: formData.get('phone') as string || null,  // ✅ 可 null
     emergencyContact: formData.get('emergencyContact') as string,  // ✅ 断言
     medicalHistory: formData.get('medicalHistory') as string || null,  // ✅ 可 null
