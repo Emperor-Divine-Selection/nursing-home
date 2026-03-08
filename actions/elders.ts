@@ -3,6 +3,7 @@
 import { db } from "@/lib/db"
 import { elders } from "@/lib/schema"
 import { eq } from "drizzle-orm"
+import { revalidateTag } from "next/cache"
 
 
 // 添加老人
@@ -25,6 +26,7 @@ export async function addElder(formData: FormData) {
     createdAt: new Date().toISOString(),   // ✅ 转 string
     updatedAt: new Date().toISOString(),   // ✅ 转 string
   })
+    revalidateTag('rooms','default')
     return {success: true,message: '添加成功'}
   }catch (error) {
     console.error('添加失败:', error);
@@ -53,7 +55,7 @@ export async function updateElder(id: string, data: {
   age?: number;
   gender?: string;
   room?: string;
-  bedId?: string;
+  bedId?: string ;
   phone?: string;
   emergencyContact?: string;
   medicalHistory?: string;

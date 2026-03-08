@@ -8,6 +8,20 @@
       "when": 1772632797661,
       "tag": "0000_awesome_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772806816601,
+      "tag": "0001_fast_mojo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772955423876,
+      "tag": "0002_worthless_secret_warriors",
+      "breakpoints": true
     }
   ]
 }

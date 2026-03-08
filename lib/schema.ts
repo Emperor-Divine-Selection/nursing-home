@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+
+import { sqliteTable, text, integer,unique } from 'drizzle-orm/sqlite-core'
 
 // 用户表
 export const users = sqliteTable('users', {
@@ -20,8 +21,10 @@ export const beds = sqliteTable('beds', {
   status: text('status').notNull().default('available'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-})
-
+},(table) => ({
+  uniqueRoomBed: unique('unique_room_bed').on(table.roomNumber, table.bedNumber),
+}))
+ 
 // 老人表
 export const elders = sqliteTable('elders', {
   id: text('id').primaryKey(),
@@ -29,7 +32,7 @@ export const elders = sqliteTable('elders', {
   age: integer('age').notNull(),
   gender: text('gender').notNull().default('unknown'),
   room: text('room').notNull(),
-  bedId: text('bed_id').references(() => beds.id, { onDelete: 'cascade' }),
+  bedId: text('bed_id').references(() => beds.id, { onDelete: 'set null', onUpdate: 'cascade' }).$type<string | null>().unique(),
   phone: text('phone'),
   emergencyContact: text('emergency_contact').notNull(),
   medicalHistory: text('medical_history'),
@@ -63,6 +66,7 @@ export const sessions = sqliteTable('sessions', {
   createdAt: text('created_at').notNull(),
 })
 
+// 健康记录表
 export const healthRecords = sqliteTable('health_records', {
   id: text('id').primaryKey(),
   elderId: text('elder_id').notNull().references(() => elders.id, { onDelete: 'cascade'}),

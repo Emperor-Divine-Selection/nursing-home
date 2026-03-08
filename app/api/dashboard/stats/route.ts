@@ -64,11 +64,17 @@ export async function GET(req: Request) {
         lte(healthRecords.createdAt, todayEnd)
      ))
 
-     // 护理记录
-     const pendingTasksResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(careRecords)
-      .where(eq(careRecords.status, 'pending'))
+      // 护理待处理（今日）
+      const pendingTasksResult = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(careRecords)
+          .where(
+            and(
+              eq(careRecords.status, 'pending'),
+              gte(careRecords.scheduledAt, todayStart),
+              lte(careRecords.scheduledAt, todayEnd)
+            )
+          )
     
       // 护理完成
        const completedTasksResult = await db
@@ -81,6 +87,7 @@ export async function GET(req: Request) {
           lte(careRecords.completedAt, todayEnd)
         )
       )
+
 
        return NextResponse.json({
       residentCount: activeEldersResult[0]?.count || 0,
