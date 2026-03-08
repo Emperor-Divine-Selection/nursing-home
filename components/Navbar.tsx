@@ -7,15 +7,14 @@ import { useRouter } from 'next/navigation'
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  
+
   const hideNavbar = ['/', '/register'].includes(pathname)
+
   if (hideNavbar) return null
 
   const handleLogout = async () => {
     try {
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST'
-      })
+      const res = await fetch('/api/auth/logout', { method: 'POST' })
       const data = await res.json()
       if (data.success) {
         router.push('/')
@@ -59,34 +58,34 @@ export default function Navbar() {
                 老人管理
               </Link>
               <Link
-                href="/dashboard/nurses"
+                href="/dashboard/beds"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname.startsWith('/dashboard/nurses')
+                  pathname.startsWith('/dashboard/beds')
                     ? 'border-indigo-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                护士管理
+                床位管理
               </Link>
               <Link
-                href="/dashboard/schedule"
+                href="/dashboard/care"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname.startsWith('/dashboard/schedule')
+                  pathname.startsWith('/dashboard/care')
                     ? 'border-indigo-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                排班管理
+                护理记录
               </Link>
               <Link
-                href="/dashboard/medications"
+                href="/dashboard/health"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname.startsWith('/dashboard/medications')
+                  pathname.startsWith('/dashboard/health')
                     ? 'border-indigo-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
               >
-                用药记录
+                健康记录
               </Link>
             </div>
           </div>

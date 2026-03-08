@@ -1,8 +1,24 @@
 'use client'
 
 import { addElder } from "@/actions/elders";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getAvailableBedsInRoom, getAllRooms } from "@/actions/rooms";
+
+type Bed = {
+  id: string;
+  roomNumber: string;
+  bedNumber: string;
+  type: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type rooms = {
+  id: string;
+  roomNumber: string;
+}
 
 export default function addEldersPage() {
 
@@ -10,6 +26,39 @@ export default function addEldersPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rooms,setRooms] = useState<rooms[]>([])
+  const [bedsInRoom,setBedsInRoom] = useState<Bed[]>([])
+
+  const handleRoomChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const roomNumber = e.target.value;
+  
+  if (!roomNumber) {
+    setBedsInRoom([]);  // 清空床位列表
+    return;
+  }
+  
+  const result = await getAvailableBedsInRoom(roomNumber);
+  if (result.success && result.data) {
+    setBedsInRoom(result.data);
+  } else {
+    setBedsInRoom([]);
+    setError(result.error || '加载床位失败');
+  }
+};
+  
+  useEffect(() => {
+
+    async function getRooms() {
+      const rooms = await getAllRooms()
+      if (rooms.success && rooms.data) {
+        setRooms(rooms.data)
+      }
+    }
+
+    getRooms()
+
+  },[])
+
   const addelder = async (formData: FormData) => {
   setLoading(true)
   setError('')  // 清空旧错误
@@ -57,16 +106,25 @@ export default function addEldersPage() {
           </div>
           <div className="mb-4">
             <label htmlFor="room"
-              className="block text-sm font-medium text-gray-700 mb-1">房号:</label>
-            <input id="room" type="text" name="room" placeholder="房号" required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+              className="block text-sm font-medium text-gray-700 mb-1">房间:</label>
+            <select name="room" id="room" onChange={handleRoomChange} required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+              <option value="">请选择房间</option>
+              {rooms.map((room) => (
+               <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
+                ))}
+            </select>
           </div>
           <div className="mb-4">
             <label htmlFor="bedId"
               className="block text-sm font-medium text-gray-700 mb-1">床号:</label>
-            <input id="bedId" type="text" name="bedId" placeholder="床号" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <select name="bedId" id="bedId" required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+              <option value="">请选择床号</option>
+              {bedsInRoom.map((bed) => (
+               <option key={bed.id} value={bed.id}>{bed.bedNumber}</option>
+                ))}
+            </select>
           </div>
           <div className="mb-4">
             <label htmlFor="phone"
