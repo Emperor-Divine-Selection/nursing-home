@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getElder, updateElder } from '@/actions/elders'
+import { getAllRooms,getAvailableBedsInRoom } from '@/actions/rooms'
 
 interface Elder {
 
@@ -20,6 +21,17 @@ interface Elder {
     medicalHistory: string | null;
 }
 
+interface Room {
+  id: string;
+  roomNumber: string;
+  createdAt: string;
+  updatedAt: string;
+}
+interface Bed {
+  id: string;
+  bedNumber: string;
+}
+
 export default function ElderEditPage() {
   const params = useParams()
   const router = useRouter()
@@ -30,6 +42,16 @@ export default function ElderEditPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [rooms, setRooms] = useState<Room[]>()
+  const [bedsInRoom, setBedsInRoom] = useState<Bed[]>([])
+
+  const handleRoomChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const roomNumber = e.target.value
+    const beds = await getAvailableBedsInRoom(roomNumber)
+    if (beds.success && beds.data) {
+      setBedsInRoom(beds.data)
+    }
+  }
 
   useEffect(() => {
     const loadElder = async () => {
@@ -39,37 +61,59 @@ export default function ElderEditPage() {
       }
       setLoading(false)
     }
+
+    const loadRooms = async () => {
+      const result = await getAllRooms()
+      if (result.success && result.data) {
+        setRooms(result.data)
+      }
+    }
+    loadRooms()
     loadElder()
   }, [id])
 
-  const handleSubmit = async (formData: FormData) => {
-    setSubmitting(true)
-    setError('')
-    
-    const data = {
-      name: formData.get('name') as string,
-      age: Number(formData.get('age')),
-      gender: (formData.get('gender') as 'male' | 'female' | 'unknown') || 'unknown',
-      roomId: formData.get('room') as string || null,
-      bedId: (formData.get('bedId') as string) || null,
-      phone: formData.get('phone') as string || null,
-      emergencyContact: formData.get('emergencyContact') as string,
-      medicalHistory: formData.get('medicalHistory') as string || null,
-      status: formData.get('status') as 'active' | 'discharged',
-      admittedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    
-    const result = await updateElder(id, data)
-    
-    if (result.success) {
-      setSuccess(true)
-      router.push('/dashboard/elders')
-    } else {
-      setError(result.error || '更新失败')
-      setSubmitting(false)
-    }
+const handleSubmit = async (formData: FormData) => {
+  setSubmitting(true)
+  setError('')
+  
+  const data = {
+    name: formData.get('name') as string,
+    age: Number(formData.get('age')),
+    gender: (formData.get('gender') as 'male' | 'female' | 'unknown') || 'unknown',
+    roomId: formData.get('room') as string || null,  // 这里需要处理空字符串
+    bedId: (formData.get('bedId') as string) || null,
+    phone: formData.get('phone') as string || null,
+    emergencyContact: formData.get('emergencyContact') as string,
+    medicalHistory: formData.get('medicalHistory') as string || null,
+    status: formData.get('status') as 'active' | 'discharged',
+    admittedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   }
+  
+  // 修正空字符串为 null
+  if (data.roomId === '') {
+    data.roomId = null
+  }
+  if (data.bedId === '') {
+    data.bedId = null
+  }
+  if (data.phone === '') {
+    data.phone = null
+  }
+  if (data.medicalHistory === '') {
+    data.medicalHistory = null
+  }
+  
+  const result = await updateElder(id, data)
+  
+  if (result.success) {
+    setSuccess(true)
+    router.push('/dashboard/elders')
+  } else {
+    setError(result.error || '更新失败')
+    setSubmitting(false)
+  }
+}
 
   if (loading) {
     return (
@@ -166,26 +210,35 @@ export default function ElderEditPage() {
               <label htmlFor="room" className="block text-sm font-medium text-gray-700 mb-1">
                 房间
               </label>
-              <input
+               <select
                 id="room"
                 name="room"
-                type="text"
-                defaultValue={elder.room? elder.room : ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+                defaultValue={elder.room || undefined}
+                onChange={handleRoomChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="">请选择</option>
+                {rooms?.map((room) => (
+                  <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label htmlFor="bedId" className="block text-sm font-medium text-gray-700 mb-1">
                 床号（可选）
               </label>
-              <input
+              <select
                 id="bedId"
                 name="bedId"
-                type="text"
-                defaultValue={elder.bed || ''}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+                defaultValue={elder.bed || undefined}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              >
+                <option value="">请选择</option>
+                {bedsInRoom?.map((bed) => (
+                  <option key={bed.id} value={bed.id}>{bed.bedNumber}</option>
+                ))}
+              </select>
             </div>
           </div>
 

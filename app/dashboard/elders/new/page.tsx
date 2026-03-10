@@ -5,18 +5,15 @@ import { useState,useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAvailableBedsInRoom, getAllRooms } from "@/actions/rooms";
 
-type Bed = {
-  id: string;
-  roomId: string;
-  bedNumber: string;
-  status: "available" | "occupied" | "maintenance" | "reserved";
-  createdAt: string;
-  updatedAt: string;
-};
-
 type rooms = {
   id: string;
   roomNumber: string;
+}
+
+type room = {
+  
+  id: string;
+  bedNumber: string;
 }
 
 export default function addEldersPage() {
@@ -26,7 +23,7 @@ export default function addEldersPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rooms,setRooms] = useState<rooms[]>([])
-  const [bedsInRoom,setBedsInRoom] = useState<Bed[]>()
+  const [bedsInRoom,setBedsInRoom] = useState<room[]>()
 
   const handleRoomChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
   const roomNumber = e.target.value;
@@ -37,7 +34,7 @@ export default function addEldersPage() {
   }
   
   const result = await getAvailableBedsInRoom(roomNumber);
-  if (result.success && result.data && result !== undefined ) {
+  if (result.success && result.data ) {
     setBedsInRoom(result.data);
   } else {
     setBedsInRoom([]);
@@ -110,7 +107,7 @@ export default function addEldersPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="">请选择房间</option>
               {rooms.map((room) => (
-               <option key={room.id} value={room.id}>{room.roomNumber}</option>
+               <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
                 ))}
             </select>
           </div>

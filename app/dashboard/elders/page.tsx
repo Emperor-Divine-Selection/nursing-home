@@ -1,82 +1,36 @@
 'use client'
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getAllElders, deleteElder } from "../../../actions/elders"
 
-// 定义类型
+// 简化类型定义
 interface Elder {
   id: string;
-    name: string;
-    age: number;
-    gender: "male" | "female" | "unknown";
-    phone: string | null;
-    status: "active" | "discharged";
-    room: string | null;
-    bed: string | null;
-    admittedAt: string;
-    dischargedAt: string | null;
+  name: string;
+  age: number;
+  gender: "male" | "female" | "unknown";
+  phone: string | null;
+  status: "active" | "discharged";
+  roomNumber: string | null;  // 直接来自数据库的房间号
+  bedNumber: string | null;   // 直接来自数据库的床位号
+  admittedAt: string;
+  dischargedAt: string | null;
 }
-
-interface BedInfo {
-  id: string
-  roomNumber: string
-  bedNumber: string
-  type: string
-  status: string
-  createdAt: string
-  updatedAt: string
-}
-
-// 缓存床位信息，避免重复请求
-const bedInfoCache = new Map<string, BedInfo>()
 
 export default function EldersPage() {
   const router = useRouter()
   const [elders, setElders] = useState<Elder[]>([])
-  const [bedInfoMap, setBedInfoMap] = useState<Map<string, BedInfo>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // 获取床位信息的函数
-  const fetchBedInfo = useCallback(async (bedId: string): Promise<BedInfo | null> => {
-    // 检查缓存
-    if (bedInfoCache.has(bedId)) {
-      return bedInfoCache.get(bedId)!
-    }
-    
-    try {
-      const response = await fetch(`/api/beds?uuid=${encodeURIComponent(bedId)}`)
-      
-      if (!response.ok) {
-        console.error(`获取床位信息失败: HTTP ${response.status}`)
-        return null
-      }
-      
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        // 更新缓存
-        bedInfoCache.set(bedId, result.data)
-        return result.data
-      } else {
-        console.error('获取床位信息失败:', result.error)
-        return null
-      }
-    } catch (error) {
-      console.error('获取床位信息失败:', error)
-      return null
-    }
-  }, [])
-
-  // 获取所有老人数据并加载床位信息
+  // 获取所有老人数据 - 简化版
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       setError('')
       
       try {
-        // 1. 获取老人数据
         const result = await getAllElders()
         
         if (!result.success || !result.data) {
@@ -85,28 +39,7 @@ export default function EldersPage() {
           return
         }
         
-        const eldersData = result.data
-        setElders(eldersData)
-        
-        // 2. 获取所有有床位的老人的床位信息
-        const bedIds = eldersData
-          .map(elder => elder.bed)
-          .filter((bedId): bedId is string => bedId !== null)
-        
-        if (bedIds.length > 0) {
-          const bedPromises = bedIds.map(bedId => fetchBedInfo(bedId))
-          const bedResults = await Promise.all(bedPromises)
-          
-          // 3. 构建bedId到床位信息的映射
-          const newBedInfoMap = new Map<string, BedInfo>()
-          bedResults.forEach((bedInfo, index) => {
-            if (bedInfo) {
-              newBedInfoMap.set(bedIds[index], bedInfo)
-            }
-          })
-          
-          setBedInfoMap(newBedInfoMap)
-        }
+        setElders(result.data)
         
       } catch (error) {
         console.error('加载数据失败:', error)
@@ -117,9 +50,9 @@ export default function EldersPage() {
     }
     
     fetchData()
-  }, [fetchBedInfo])
+  }, [])
 
-  // 状态样式辅助函数
+  // 状态样式辅助函数 - 保持原样
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800'
@@ -138,17 +71,22 @@ export default function EldersPage() {
     }
   }
 
-  // 获取床位显示文本
-  const getBedDisplayText = (elder: Elder): string => {
-    if (!elder.bed) return ''
-    
-    const bedInfo = bedInfoMap.get(elder.bed)
-    if (!bedInfo) return elder.bed.substring(0, 8) + '...' // 显示部分ID
-    
-    return `${bedInfo.bedNumber}号床 (${bedInfo.roomNumber}房)`
+  // 性别显示 - 简化
+  const getGenderText = (gender: string) => {
+    switch (gender) {
+      case 'male': return '男'
+      case 'female': return '女'
+      default: return '未知'
+    }
   }
 
-  // 删除处理
+  // 床位显示 - 简化版
+  const getBedDisplayText = (elder: Elder): string => {
+    if (!elder.bedNumber) return '-'
+    return `${elder.bedNumber}号床`
+  }
+
+  // 删除处理 - 保持原样
   const handleDelete = async (id: string) => {
     const confirmed = window.confirm('确定要删除吗？')
     if (!confirmed) return
@@ -157,11 +95,6 @@ export default function EldersPage() {
       const result = await deleteElder(id)
       if (result.success) {
         setElders(elders.filter((elder) => elder.id !== id))
-        // 清理缓存中的床位信息（如果相关）
-        const elderToDelete = elders.find(elder => elder.id === id)
-        if (elderToDelete?.bed) {
-          bedInfoCache.delete(elderToDelete.bed)
-        }
       } else {
         alert('删除失败: ' + (result.error || '未知错误'))
       }
@@ -171,7 +104,7 @@ export default function EldersPage() {
     }
   }
 
-  // 加载状态
+  // 加载状态 - 保持原样
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -180,7 +113,7 @@ export default function EldersPage() {
     )
   }
 
-  // 错误状态
+  // 错误状态 - 保持原样
   if (error) {
     return (
       <div className="p-4">
@@ -205,7 +138,7 @@ export default function EldersPage() {
       
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-gray-500">
-          共 {elders.length} 位老人，{Array.from(bedInfoMap.keys()).length} 位已分配床位
+          共 {elders.length} 位老人
         </div>
         <button 
           onClick={() => router.push('/dashboard/elders/new')}
@@ -249,9 +182,6 @@ export default function EldersPage() {
                   入院时间
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  出院时间
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -266,17 +196,16 @@ export default function EldersPage() {
                     {elder.age}岁
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.gender === "male" ? "男" : 
-                     elder.gender === "female" ? "女" : "未知"}
+                    {getGenderText(elder.gender)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.room? elder.room: ''}
+                    {elder.roomNumber || '-'}  {/* ← 直接显示房间号 */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {getBedDisplayText(elder)}
+                    {getBedDisplayText(elder)}  {/* ← 直接显示床位号 */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.phone || ''}
+                    {elder.phone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(elder.status)}`}>
@@ -285,9 +214,6 @@ export default function EldersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {new Date(elder.admittedAt).toLocaleDateString('zh-CN')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.dischargedAt? new Date(elder.dischargedAt).toLocaleDateString('zh-CN') : ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button 
@@ -311,10 +237,10 @@ export default function EldersPage() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
         </div>
-      )}
-    </div>
+        )}
+      </div>   
   )
 }

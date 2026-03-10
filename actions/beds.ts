@@ -71,40 +71,55 @@ export async function getAvailableBeds(){
 
 }
 
+
+
+
 //添加床位
 export async function addBed(data: {
-
-  roomId: string
-  bedNumber: string
-  status: string  // 可选，默认 'available'
-
+  roomNumber: string;
+  bedNumber: string;
+  status: string;
 }) {
   try {
-    await db.insert(beds).values({
+    // 同步事务回调（不要 async / await）
+    db.transaction((tx) => {
+      const roomsFound = tx
+        .select({ id: rooms.id })
+        .from(rooms)
+        .where(eq(rooms.roomNumber, data.roomNumber))
+        .limit(1)
+        .get();
 
-      roomId: data.roomId,
-      bedNumber: data.bedNumber,
-      status: (data.status) as 'available'||'occupied' || 'maintenance' ||'reserved' 
+      if (roomsFound) {
+        const roomId = roomsFound.id;
+        tx.insert(beds).values({
+          roomId,
+          bedNumber: data.bedNumber,
+          status: (data.status ?? 'available') as |'available'|'occupied'|'maintenance'|'reserved',
+        });
+      } else {
+        const roomId = crypto.randomUUID();
+
+        tx.insert(rooms).values({
+          id: roomId,
+          roomNumber: data.roomNumber,
+        });
+
+        tx.insert(beds).values({
+          roomId,
+          bedNumber: data.bedNumber,
+          status: (data.status ?? 'available') as |'available'|'occupied'|'maintenance'|'reserved',
+        });
+      }
+    });
     
-    })
-    
-    revalidateTag('beds','default')  // 重要：清除缓存
-    revalidatePath('/dashboard/beds')
-    return { success: true, message: '添加成功' }
+    revalidateTag('beds', 'default');
+    revalidatePath('/dashboard/beds');
+    return { success: true, message: '添加成功' };
   } catch (error) {
-    console.error('添加失败:', error)
-    return { success: false, error: '添加失败' }
+    console.error('添加失败:', error);
+    return { success: false, error: '添加失败' };
   }
-}
-
-// 2. 同时保留旧的 FormData 版本（兼容性）
-export async function addBedViaForm(formData: FormData) {
-  const data = {
-    roomId: formData.get('roomNumber') as string,
-    bedNumber: formData.get('bedNumber') as string,
-    status: formData.get('status') as string
-  }
-  return addBed(data)
 }
 
 //更新床位
@@ -147,4 +162,3 @@ export async function deleteBed(id: string) {
   }
 
 }
-

@@ -7,7 +7,7 @@ import { addBed } from '@/actions/beds'
 type BedStatus = 'available' | 'occupied' | 'maintenance' | 'reserved'
 
 type BedFormData = {
-  roomId: string
+  
   roomNumber: string
   bedNumber: string
   status: BedStatus
