@@ -2,38 +2,44 @@
 
 import { useState, useMemo } from 'react';
 import BedCard from './BedCard';
-import type { Bed, BedStatus } from '@/type/bed';
 
 // 输入类型（宽松）
 type InputBed = {
   id: string;
-  roomNumber: string;
+  roomNumber: string | null;
   bedNumber: string;
-  type: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
+  status: "available" | "occupied" | "maintenance" | "reserved";
+  updatedAt: string;
 };
+
+export interface Bed {
+  id: string;
+  roomNumber: string | null;
+  bedNumber: string;
+  status: "available" | "occupied" | "maintenance" | "reserved";
+  updatedAt: string;
+}
+
+// 修正：添加 'reserved'
+type BedStatus = 'available' | 'occupied' | 'maintenance' | 'reserved';
 
 interface ClientBedListProps {
   initialBeds?: InputBed[];
 }
 
 export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) {
-  // 转换数据类型
+  // 转换数据类型 - 修正类型转换
   const beds: Bed[] = useMemo(() => 
     initialBeds.map(bed => ({
       id: bed.id,
-      roomNumber: bed.roomNumber,
+      roomNumber: bed.roomNumber ?? null,
       bedNumber: bed.bedNumber,
-      type: (bed.type === 'vip' ? 'vip' : 'standard') as 'standard' | 'vip',
-      status: (bed.status === 'occupied' ? 'occupied' : 
-               bed.status === 'maintenance' ? 'maintenance' : 
-               'available') as BedStatus,
-      createdAt: bed.createdAt,
+      // 修正：保留所有状态，不进行错误转换
+      status: bed.status,
       updatedAt: bed.updatedAt,
-    }))
-  , [initialBeds]);
+    })), 
+    [initialBeds]
+  );
 
   // 状态管理
   const [filter, setFilter] = useState<'all' | BedStatus>('all');
@@ -48,11 +54,10 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
       
       // 搜索筛选
       if (search) {
-        const roomMatch = bed.roomNumber.toLowerCase().includes(search.toLowerCase());
+        const roomMatch = bed.roomNumber?.toLowerCase().includes(search.toLowerCase()) ?? false;
         const bedMatch = bed.bedNumber.toLowerCase().includes(search.toLowerCase());
         return roomMatch || bedMatch;
       }
-      
       return true;
     });
 
@@ -60,13 +65,21 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
     result.sort((a, b) => {
       switch (sortBy) {
         case 'room':
-          return a.roomNumber.localeCompare(b.roomNumber) || 
-                 parseInt(a.bedNumber) - parseInt(b.bedNumber);
+          // 修正：安全处理 null 值
+          const roomA = a.roomNumber ?? '';
+          const roomB = b.roomNumber ?? '';
+          return roomA.localeCompare(roomB) || parseInt(a.bedNumber) - parseInt(b.bedNumber);
+        
         case 'status':
-          const statusOrder = { available: 0, occupied: 1, maintenance: 2 };
+          // 修正：添加类型注解确保完整性
+          const statusOrder: Record<BedStatus, number> = {
+            available: 0,
+            occupied: 1,
+            maintenance: 2,
+            reserved: 3
+          };
           return statusOrder[a.status] - statusOrder[b.status];
-        case 'type':
-          return (a.type === 'vip' ? 1 : 0) - (b.type === 'vip' ? 1 : 0);
+        
         default:
           return 0;
       }
@@ -75,12 +88,13 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
     return result;
   }, [beds, filter, search, sortBy]);
 
-  // 统计数据
+  // 统计数据 - 修正：添加 reserved 统计
   const stats = useMemo(() => ({
     total: beds.length,
     available: beds.filter(b => b.status === 'available').length,
     occupied: beds.filter(b => b.status === 'occupied').length,
     maintenance: beds.filter(b => b.status === 'maintenance').length,
+    reserved: beds.filter(b => b.status === 'reserved').length,
   }), [beds]);
 
   return (
@@ -96,19 +110,15 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="absolute left-3 top-2.5 text-gray-400">
-            🔍
-          </div>
+          <div className="absolute left-3 top-2.5 text-gray-400">🔍</div>
         </div>
 
-        {/* 筛选按钮组 */}
+        {/* 筛选按钮组 - 修正：添加 reserved 按钮 */}
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'all'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             全部 ({stats.total})
@@ -116,9 +126,7 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
           <button
             onClick={() => setFilter('available')}
             className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'available'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === 'available' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             空闲 ({stats.available})
@@ -126,9 +134,7 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
           <button
             onClick={() => setFilter('occupied')}
             className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'occupied'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === 'occupied' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             占用 ({stats.occupied})
@@ -136,12 +142,19 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
           <button
             onClick={() => setFilter('maintenance')}
             className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'maintenance'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              filter === 'maintenance' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             维护 ({stats.maintenance})
+          </button>
+          {/* 添加 reserved 按钮 */}
+          <button
+            onClick={() => setFilter('reserved')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              filter === 'reserved' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            预定 ({stats.reserved})
           </button>
         </div>
 
@@ -151,7 +164,7 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
           <select
             className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'room' | 'status' | 'type')}
           >
             <option value="room">房间号</option>
             <option value="status">状态</option>
@@ -180,9 +193,9 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
         </div>
       )}
 
-      {/* 统计信息 */}
+      {/* 统计信息 - 修正：添加 reserved 统计 */}
       <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center p-4 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
             <div className="text-sm text-gray-600">总床位</div>
@@ -198,6 +211,10 @@ export default function ClientBedList({ initialBeds = [] }: ClientBedListProps) 
           <div className="text-center p-4 bg-yellow-50 rounded-lg">
             <div className="text-2xl font-bold text-yellow-800">{stats.maintenance}</div>
             <div className="text-sm text-yellow-600">维护</div>
+          </div>
+          <div className="text-center p-4 bg-purple-50 rounded-lg">
+            <div className="text-2xl font-bold text-purple-800">{stats.reserved}</div>
+            <div className="text-sm text-purple-600">预定</div>
           </div>
         </div>
       </div>

@@ -1,15 +1,25 @@
 'use server'
 
 import { db } from "@/lib/db"
-import { beds } from "@/lib/schema"
-import { eq } from "drizzle-orm"
+import { beds,rooms } from "@/lib/schema"
+import { and, eq } from "drizzle-orm"
 import { revalidateTag, unstable_cache } from "next/cache"
+import { revalidatePath } from "next/cache"
 
 //获取所有床位
 export const getAllBeds = unstable_cache( async () => {
    
   try{
-      const Beds = await db.select().from(beds)
+      const Beds = await db.select(
+        { 
+          id: beds.id,
+          roomNumber: rooms.roomNumber,
+          bedNumber: beds.bedNumber,
+          status: beds.status,
+          updatedAt: beds.updatedAt
+        }
+      ).from(beds).leftJoin(rooms, and(eq(beds.roomId, rooms.id)))
+      if(!Beds) return { success: false, error: '床位不存在' };
       return { success: true, data: Beds }
     } catch(error){ 
       console.error('查询失败:', error);
@@ -63,23 +73,23 @@ export async function getAvailableBeds(){
 
 //添加床位
 export async function addBed(data: {
-  roomNumber: string
+
+  roomId: string
   bedNumber: string
-  type: string
-  status?: string  // 可选，默认 'available'
+  status: string  // 可选，默认 'available'
+
 }) {
   try {
     await db.insert(beds).values({
-      id: crypto.randomUUID(),
-      roomNumber: data.roomNumber,
+
+      roomId: data.roomId,
       bedNumber: data.bedNumber,
-      type: data.type,
-      status: data.status || 'available',  // 默认值
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      status: (data.status) as 'available'||'occupied' || 'maintenance' ||'reserved' 
+    
     })
     
     revalidateTag('beds','default')  // 重要：清除缓存
+    revalidatePath('/dashboard/beds')
     return { success: true, message: '添加成功' }
   } catch (error) {
     console.error('添加失败:', error)
@@ -90,32 +100,36 @@ export async function addBed(data: {
 // 2. 同时保留旧的 FormData 版本（兼容性）
 export async function addBedViaForm(formData: FormData) {
   const data = {
-    roomNumber: formData.get('roomNumber') as string,
+    roomId: formData.get('roomNumber') as string,
     bedNumber: formData.get('bedNumber') as string,
-    type: formData.get('type') as string,
     status: formData.get('status') as string
   }
   return addBed(data)
 }
 
 //更新床位
-export async function updateBed(id: string, data: {
-  roomNumber?: string;
-  bedNumber?: string;
-  type?: string;
-  status?: string;
-  updatedAt?: string;
-}) { 
-  try{
+export async function updateBed(
+  id: string, 
+  data: { 
+    roomId?: string; 
+    bedNumber?: string; 
+    status?: 'available' | 'occupied' | 'maintenance' | 'reserved';
+    updatedAt?: string; 
+  }
+) {
+  try {
     await db.update(beds)
-    .set({ ...data, updatedAt: new Date().toISOString() })
-    .where(eq(beds.id, id))
+      .set({ 
+        ...data, 
+        updatedAt: new Date().toISOString() 
+      })
+      .where(eq(beds.id, id));
+    
     return { success: true, message: '更新成功' };
-  }catch(error){ 
+  } catch(error) {
     console.error('更新失败:', error);
     return { success: false, error: '更新失败' };
   }
-
 }
 
 //删除床位
@@ -125,6 +139,7 @@ export async function deleteBed(id: string) {
     await db.delete(beds).where(eq(beds.id, id))
     revalidateTag('bed','default')
     revalidateTag('beds','default')
+    revalidatePath('/dashboard/beds')
     return { success: true, message: '删除成功' };
   }catch(error){
     console.error('删除失败:', error);

@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "@/lib/db"
-import { beds } from "@/lib/schema"
+import { beds,rooms } from "@/lib/schema"
 import { eq,and } from "drizzle-orm"
 import { unstable_cache } from "next/cache"
 
@@ -9,8 +9,8 @@ import { unstable_cache } from "next/cache"
 export const getAllRooms = unstable_cache(async () => { 
 
   try{
-      const rooms = await db.select().from(beds).orderBy(beds.roomNumber)
-      return { success: true, data: rooms }
+      const allRoom = await db.select().from(rooms).orderBy(rooms.roomNumber)
+      return { success: true, data: allRoom }
     } catch(error){ 
       console.error('查询失败:', error);
       return { success: false, error: '查询失败' };
@@ -23,9 +23,13 @@ export const getAllRooms = unstable_cache(async () => {
 export async function getAvailableBedsInRoom(roomNumber: string) { 
   
   try {
-    const availableBeds = await db.select().from(beds)
-                .where(and(eq(beds.roomNumber, roomNumber),eq(beds.status, 'available')))
-    return { success: true, data: availableBeds }
+    const availableBedInRoom = await db.select().from(rooms).innerJoin(beds, eq(beds.roomId, rooms.id))
+      .where(and(
+        eq(rooms.roomNumber, roomNumber),
+        eq(beds.status, 'available')
+      ));          
+
+    return { success: true, data: availableBedInRoom.map(item => item.beds) }
   }catch(error){ 
     console.error('查询失败:', error);
     return { success: false, error: '查询失败' };

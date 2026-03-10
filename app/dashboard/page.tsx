@@ -24,7 +24,7 @@ export default function Dashboard() {
 
   useEffect(() => { 
     
-    fetch('/api/dashboard/stats')
+    fetch('/api/dashboard')
       .then(res => res.json())
       .then(data => {
           setStats(data)
@@ -57,7 +57,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">仪表盘</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"> 
           <StatCard title="在住老人" 
-            value={`${stats?.residentCount || 0} / ${stats?.totalBeds || 0}`}
+            value={`${stats?.residentCount || 0}`}
             subtitle="人"
             color="green"
           />

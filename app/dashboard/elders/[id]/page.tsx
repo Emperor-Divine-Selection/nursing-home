@@ -30,7 +30,6 @@ export default async function ElderDetailPage({
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800'
       case 'discharged': return 'bg-gray-100 text-gray-800'
-      case 'critical': return 'bg-red-100 text-red-800'
       default: return 'bg-blue-100 text-blue-800'
     }
   }
@@ -39,7 +38,6 @@ export default async function ElderDetailPage({
     switch (status) {
       case 'active': return '在院'
       case 'discharged': return '已出院'
-      case 'critical': return '危重'
       default: return status
     }
   }
@@ -85,15 +83,15 @@ export default async function ElderDetailPage({
             </div>
             <div>
               <label className="text-sm text-gray-500">房间</label>
-              <p className="text-gray-900 font-medium">{elder.room}</p>
+              <p className="text-gray-900 font-medium">{elder.room || ''}</p>
             </div>
             <div>
               <label className="text-sm text-gray-500">床号</label>
-              <p className="text-gray-900 font-medium">{elder.bedId || '-'}</p>
+              <p className="text-gray-900 font-medium">{elder.bed || ''}</p>
             </div>
             <div>
               <label className="text-sm text-gray-500">电话</label>
-              <p className="text-gray-900 font-medium">{elder.phone || '-'}</p>
+              <p className="text-gray-900 font-medium">{elder.phone || ''}</p>
             </div>
           </div>
         </div>
@@ -140,7 +138,7 @@ export default async function ElderDetailPage({
               <p className="text-gray-900 font-medium">
                 {elder.dischargedAt 
                   ? new Date(elder.dischargedAt).toLocaleDateString('zh-CN') 
-                  : '-'}
+                  : ''}
               </p>
             </div>
           </div>

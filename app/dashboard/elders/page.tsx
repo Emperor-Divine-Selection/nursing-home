@@ -6,20 +6,16 @@ import { getAllElders, deleteElder } from "../../../actions/elders"
 
 // 定义类型
 interface Elder {
-  id: string
-  name: string
-  age: number
-  gender: string
-  room: string
-  bedId: string | null
-  phone: string | null
-  emergencyContact: string
-  medicalHistory: string | null
-  status: string
-  admittedAt: string
-  dischargedAt: string | null
-  createdAt: string
-  updatedAt: string
+  id: string;
+    name: string;
+    age: number;
+    gender: "male" | "female" | "unknown";
+    phone: string | null;
+    status: "active" | "discharged";
+    room: string | null;
+    bed: string | null;
+    admittedAt: string;
+    dischargedAt: string | null;
 }
 
 interface BedInfo {
@@ -94,7 +90,7 @@ export default function EldersPage() {
         
         // 2. 获取所有有床位的老人的床位信息
         const bedIds = eldersData
-          .map(elder => elder.bedId)
+          .map(elder => elder.bed)
           .filter((bedId): bedId is string => bedId !== null)
         
         if (bedIds.length > 0) {
@@ -144,10 +140,10 @@ export default function EldersPage() {
 
   // 获取床位显示文本
   const getBedDisplayText = (elder: Elder): string => {
-    if (!elder.bedId) return '-'
+    if (!elder.bed) return ''
     
-    const bedInfo = bedInfoMap.get(elder.bedId)
-    if (!bedInfo) return elder.bedId.substring(0, 8) + '...' // 显示部分ID
+    const bedInfo = bedInfoMap.get(elder.bed)
+    if (!bedInfo) return elder.bed.substring(0, 8) + '...' // 显示部分ID
     
     return `${bedInfo.bedNumber}号床 (${bedInfo.roomNumber}房)`
   }
@@ -163,8 +159,8 @@ export default function EldersPage() {
         setElders(elders.filter((elder) => elder.id !== id))
         // 清理缓存中的床位信息（如果相关）
         const elderToDelete = elders.find(elder => elder.id === id)
-        if (elderToDelete?.bedId) {
-          bedInfoCache.delete(elderToDelete.bedId)
+        if (elderToDelete?.bed) {
+          bedInfoCache.delete(elderToDelete.bed)
         }
       } else {
         alert('删除失败: ' + (result.error || '未知错误'))
@@ -253,6 +249,9 @@ export default function EldersPage() {
                   入院时间
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  出院时间
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -271,13 +270,13 @@ export default function EldersPage() {
                      elder.gender === "female" ? "女" : "未知"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.room}号房间
+                    {elder.room? elder.room: ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getBedDisplayText(elder)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {elder.phone || '-'}
+                    {elder.phone || ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(elder.status)}`}>
@@ -286,6 +285,9 @@ export default function EldersPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {new Date(elder.admittedAt).toLocaleDateString('zh-CN')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {elder.dischargedAt? new Date(elder.dischargedAt).toLocaleDateString('zh-CN') : ''}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     <button 

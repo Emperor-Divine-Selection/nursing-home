@@ -5,20 +5,19 @@ import { useParams, useRouter } from 'next/navigation'
 import { getElder, updateElder } from '@/actions/elders'
 
 interface Elder {
-  id: string
-  name: string
-  age: number
-  gender: string
-  room: string
-  bedId: string | null
-  phone: string | null
-  emergencyContact: string
-  medicalHistory: string | null
-  status: string
-  admittedAt: string
-  dischargedAt: string | null
-  createdAt: string
-  updatedAt: string
+
+    id: string;
+    name: string;
+    age: number;
+    gender: "male" | "female" | "unknown";
+    phone: string | null;
+    status: "active" | "discharged";
+    room: string | null;
+    bed: string | null;
+    admittedAt: string;
+    dischargedAt: string | null;
+    emergencyContact:string;
+    medicalHistory: string | null;
 }
 
 export default function ElderEditPage() {
@@ -50,14 +49,15 @@ export default function ElderEditPage() {
     const data = {
       name: formData.get('name') as string,
       age: Number(formData.get('age')),
-      gender: formData.get('gender') as string,
-      room: formData.get('room') as string,
-      bedId: (formData.get('bedId') as string) || undefined,  // ← 改这里
-      phone: (formData.get('phone') as string) || undefined,  // ← 改这里
+      gender: (formData.get('gender') as 'male' | 'female' | 'unknown') || 'unknown',
+      roomId: formData.get('room') as string || null,
+      bedId: (formData.get('bedId') as string) || null,
+      phone: formData.get('phone') as string || null,
       emergencyContact: formData.get('emergencyContact') as string,
-      medicalHistory: (formData.get('medicalHistory') as string) || undefined,  // ← 改这里
-      status: formData.get('status') as string,
-      dischargedAt: (formData.get('dischargedAt') as string) || undefined,  // ← 改这里
+      medicalHistory: formData.get('medicalHistory') as string || null,
+      status: formData.get('status') as 'active' | 'discharged',
+      admittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
     
     const result = await updateElder(id, data)
@@ -170,8 +170,7 @@ export default function ElderEditPage() {
                 id="room"
                 name="room"
                 type="text"
-                defaultValue={elder.room}
-                required
+                defaultValue={elder.room? elder.room : ''}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -184,7 +183,7 @@ export default function ElderEditPage() {
                 id="bedId"
                 name="bedId"
                 type="text"
-                defaultValue={elder.bedId || ''}
+                defaultValue={elder.bed || ''}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -226,7 +225,7 @@ export default function ElderEditPage() {
             <textarea
               id="medicalHistory"
               name="medicalHistory"
-              rows="4"
+              rows= {4}
               defaultValue={elder.medicalHistory || ''}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
             />
@@ -245,7 +244,6 @@ export default function ElderEditPage() {
               >
                 <option value="active">在院</option>
                 <option value="discharged">已出院</option>
-                <option value="critical">危重</option>
               </select>
             </div>
 

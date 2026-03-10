@@ -4,16 +4,12 @@ import { useState } from 'react'
 import ClientBedList from '../components/ClientBedList'
 import BedForm from './BedForm'
 
-
 interface Bed { 
     id: string;
-    roomNumber: string;
+    roomNumber: string | null;
     bedNumber: string;
-    type: string;
-    status: string;
-    createdAt: string;
+    status: "available" | "occupied" | "maintenance" | "reserved";
     updatedAt: string;
-
 }
 
 
