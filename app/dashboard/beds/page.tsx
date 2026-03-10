@@ -3,18 +3,6 @@ import AddBed from "@/components/AddBed";
 
 
 export const revalidate = 300;
-export type BedResponse = {
-  beds: {
-    id: string;
-    roomNumber: string;
-    bedNumber: string;
-    type: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  }[] | undefined;
-};
-export type BedsArrayNonNull = NonNullable<BedResponse['beds']>; // 不带 undefined
 
 export default async function BedsPage() {
   try {
@@ -32,7 +20,7 @@ export default async function BedsPage() {
     return (
       <div className="p-6">
         {/* 传递数据给客户端组件 */}
-        <AddBed initialBeds={beds ?? []} />
+        <AddBed initialBeds={beds? beds : []} />
       </div>
     );
     

@@ -7,10 +7,9 @@ import { getAvailableBedsInRoom, getAllRooms } from "@/actions/rooms";
 
 type Bed = {
   id: string;
-  roomNumber: string;
+  roomId: string;
   bedNumber: string;
-  type: string;
-  status: string;
+  status: "available" | "occupied" | "maintenance" | "reserved";
   createdAt: string;
   updatedAt: string;
 };
@@ -27,7 +26,7 @@ export default function addEldersPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rooms,setRooms] = useState<rooms[]>([])
-  const [bedsInRoom,setBedsInRoom] = useState<Bed[]>([])
+  const [bedsInRoom,setBedsInRoom] = useState<Bed[]>()
 
   const handleRoomChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
   const roomNumber = e.target.value;
@@ -38,7 +37,7 @@ export default function addEldersPage() {
   }
   
   const result = await getAvailableBedsInRoom(roomNumber);
-  if (result.success && result.data) {
+  if (result.success && result.data && result !== undefined ) {
     setBedsInRoom(result.data);
   } else {
     setBedsInRoom([]);
@@ -107,21 +106,21 @@ export default function addEldersPage() {
           <div className="mb-4">
             <label htmlFor="room"
               className="block text-sm font-medium text-gray-700 mb-1">房间:</label>
-            <select name="room" id="room" onChange={handleRoomChange} required
+            <select name="room" id="room" onChange={handleRoomChange} 
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="">请选择房间</option>
               {rooms.map((room) => (
-               <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
+               <option key={room.id} value={room.id}>{room.roomNumber}</option>
                 ))}
             </select>
           </div>
           <div className="mb-4">
             <label htmlFor="bedId"
               className="block text-sm font-medium text-gray-700 mb-1">床号:</label>
-            <select name="bedId" id="bedId" required
+            <select name="bedId" id="bedId" 
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="">请选择床号</option>
-              {bedsInRoom.map((bed) => (
+              {bedsInRoom !== undefined && bedsInRoom.map((bed) => (
                <option key={bed.id} value={bed.id}>{bed.bedNumber}</option>
                 ))}
             </select>
