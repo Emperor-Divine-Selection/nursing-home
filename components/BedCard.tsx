@@ -1,7 +1,6 @@
 'use client';
 
 import { deleteBed } from "@/actions/beds";
-// import { useRouter } from "next/navigation";
 
 type Bed = {
   id: string;
@@ -25,7 +24,6 @@ export default function BedCard({ bed }: BedCardProps) {
 
   const status = statusConfig[bed.status];
   const displayRoomNumber = bed.roomNumber ?? '未分配';
-  // const router = useRouter();
 
   const handleDelete = async () => {
      await deleteBed(bed.id);

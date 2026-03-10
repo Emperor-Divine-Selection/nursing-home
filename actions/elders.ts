@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "@/lib/db"
-import { elders, beds } from "@/lib/schema"
+import { elders, beds, rooms } from "@/lib/schema"
 import { and, eq } from "drizzle-orm"
 
 // 添加老人
@@ -82,15 +82,22 @@ export async function getElder(id: string) {
         gender: elders.gender,
         phone: elders.phone,
         status: elders.status,
-        room: beds.bedNumber,
+        room: rooms.roomNumber,
         bed: beds.bedNumber,
         admittedAt: elders.admittedAt,
         medicalHistory: elders.medicalHistory,
         emergencyContact: elders.emergencyContact,
         dischargedAt: elders.dischargedAt
 
-      }).from(elders).leftJoin(beds, and(eq(elders.bedId, beds.id))).where(eq(elders.id, id));
+      }).from(elders)
+        .leftJoin(beds, and(eq(elders.bedId, beds.id)))
+        .leftJoin(rooms, and(eq(beds.roomId, rooms.id)))
+        .where(eq(elders.id, id));
     const elder = result[0];
+
+    if (!elder.room) {
+      elder.room = null;
+    }
     
     if (!elder) {
       return { success: false, error: '老人不存在' };
@@ -104,26 +111,32 @@ export async function getElder(id: string) {
 
 }
 
-// 查询所有老人
-export async function getAllElders() { 
 
+// 获取所有老人
+export async function getAllElders() { 
   try {
     const result = await db.select({
-        id: elders.id,
-        name: elders.name,
-        age: elders.age,
-        gender: elders.gender,
-        phone: elders.phone,
-        status: elders.status,
-        room: beds.bedNumber,
-        bed: beds.bedNumber,
-        admittedAt: elders.admittedAt,
-        dischargedAt: elders.dischargedAt
-      }).from(elders).leftJoin(beds, and(eq(elders.bedId, beds.id)));
+      id: elders.id,
+      name: elders.name,
+      age: elders.age,
+      gender: elders.gender,
+      phone: elders.phone,
+      status: elders.status,
+      roomNumber: rooms.roomNumber,  // ← 关键：房间号来自rooms表
+      bedNumber: beds.bedNumber,     // ← 关键：床位号来自beds表
+      admittedAt: elders.admittedAt,
+      medicalHistory: elders.medicalHistory,
+      emergencyContact: elders.emergencyContact,
+      dischargedAt: elders.dischargedAt,
+    })
+    .from(elders)
+    .leftJoin(beds, eq(elders.bedId, beds.id))      // 先连接床位表
+    .leftJoin(rooms, eq(beds.roomId, rooms.id))    // 再连接房间表
+    .orderBy(elders.createdAt);
+    
     return { success: true, data: result };
   } catch (error) {
     console.error('查询失败:', error);
     return { success: false, error: '查询失败' };
   }
-
 }
