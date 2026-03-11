@@ -24,7 +24,7 @@ export const getAllRooms = unstable_cache(async () => {
 )
 
 //从房间中获取可用床位
-export async function getAvailableBedsInRoom(roomNumber: string) { 
+export async function getAvailableBedsInRoom(roomId: string) { 
   
   try {
   
@@ -35,7 +35,7 @@ export async function getAvailableBedsInRoom(roomNumber: string) {
       }
     ).from(rooms).innerJoin(beds, eq(beds.roomId, rooms.id))
       .where(and(
-        eq(rooms.roomNumber, roomNumber),
+        eq(rooms.id, roomId),
         eq(beds.status, 'available')
       ));          
     return { success: true, data: availableBedInRoom }

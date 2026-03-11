@@ -46,8 +46,8 @@ export default function ElderEditPage() {
   const [bedsInRoom, setBedsInRoom] = useState<Bed[]>([])
 
   const handleRoomChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const roomNumber = e.target.value
-    const beds = await getAvailableBedsInRoom(roomNumber)
+    const roomId = e.target.value
+    const beds = await getAvailableBedsInRoom(roomId)
     if (beds.success && beds.data) {
       setBedsInRoom(beds.data)
     }
@@ -219,7 +219,7 @@ const handleSubmit = async (formData: FormData) => {
               >
                 <option value="">请选择</option>
                 {rooms?.map((room) => (
-                  <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
+                  <option key={room.id} value={room.id}>{room.roomNumber}</option>
                 ))}
               </select>
             </div>
