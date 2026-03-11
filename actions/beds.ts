@@ -81,7 +81,6 @@ export async function addBed(data: {
   status: string;
 }) {
   try {
-    // 同步事务回调（不要 async / await）
     db.transaction((tx) => {
       const roomsFound = tx
         .select({ id: rooms.id })

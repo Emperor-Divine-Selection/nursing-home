@@ -42,33 +42,61 @@ export async function deleteElder(id: string) {
 
 }
 
-// 更新老人
 export async function updateElder(
   id: string, 
   data: {
     name?: string;
     age?: number;
     gender?: 'male' | 'female' | 'unknown';
-    roomId?: string | null;  
-    bedId?: string | null;   
-    phone?: string | null;   
+    roomId?: string | null; 
+    bedId?: string | null; 
+    phone?: string | null; 
     emergencyContact?: string;
-    medicalHistory?: string | null;  
-    status?: 'active' | 'discharged';  
-    dischargedAt?: string | null;      
-    updatedAt?: string;
+    medicalHistory?: string | null; 
+    status?: 'active' | 'discharged'; 
+    dischargedAt?: string | null;
   }
-){
-  
+) {
   try {
-    await db.update(elders)
-      .set({...data,updatedAt: new Date().toISOString()  }).where(eq(elders.id, id));
+    console.log('更新数据:', data);
+      await db.transaction( async (tx) => { 
+       //获取当前老人的数据
+       const [currentElder] = await tx.select().from(elders).where(eq(elders.id, id));
+       //更新老人最后修改时间
+       const updatedDate = {...data, updatedAt: new Date().toISOString()}
+       //判断是否出院
+       if (data.status === 'discharged' && !data.dischargedAt) { 
+         //出院时间
+         updatedDate.dischargedAt = new Date().toISOString();
+       }else if (data.status === 'active' && data.dischargedAt) { 
+         //删除出院时间
+         updatedDate.dischargedAt = null;
+      }
+      //如果设置了新床位，更新新床位状态为occupied
+      if (data.bedId) { 
+        await tx.update(beds)
+                .set({status: 'occupied'})
+                .where(eq(beds.id, data.bedId))
+                .run();
+      }
+      //如果老人原来有床位且现在没床位了或换了新床位，那么把原来的床位状态改回 available
+      if(currentElder?.bedId && (!data.bedId || data.bedId !== currentElder.bedId)){
+        await tx.update(beds)
+                .set({status: 'available'})
+                .where(eq(beds.id, currentElder.bedId))
+                .run();
+      }
+      await tx.update(elders)
+            .set(updatedDate)
+            .where(eq(elders.id, id))
+            .run();
+      })
+
     return { success: true, message: '更新成功' };
   } catch (error) {
     console.error('更新失败:', error);
     return { success: false, error: '更新失败' };
   }
-
 }
 
 // 查询老人
