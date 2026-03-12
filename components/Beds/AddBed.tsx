@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import ClientBedList from '../components/ClientBedList'
+import ClientBedList from './ClientBedList'
 import BedForm from './BedForm'
 import DeleteBedForm from './DeleteRoomAndBed'
 
@@ -26,9 +26,9 @@ export default function AddBed({ initialBeds = [] } : addBedProps){
     const [isModalOpenAboutDeleteBed, setisModalOpenAboutDeleteBed] = useState(false);
 
   return (
-    <div className="p-6">
+    <div className="p-4">
             {/* 头部 */}
-            <header className="mb-8">
+            <header className="mb-4">
               <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
                 床位管理
               </h1>

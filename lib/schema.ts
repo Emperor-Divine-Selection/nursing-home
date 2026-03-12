@@ -54,6 +54,22 @@ export const careRecords = sqliteTable('care_records', {
   caregiverId: text('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 })
 
+// 健康记录表
+export const healthRecords = sqliteTable('health_records', {
+  id: text('id').primaryKey(),
+  elderId: text('elder_id').notNull().references(() => elders.id, { onDelete: 'cascade'}),
+  caregiverId: text('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }), //护理人员ID
+  bloodPressure: text('blood_pressure'), //血压
+  bloodSugar: integer('blood_sugar'), //血糖
+  heartRate: integer('heart_rate'), //心率
+  temperature: integer('temperature'), //体温
+  weight: integer('weight'),
+  notes: text('notes'), //健康记录备注
+  alert: integer('alert').default(0), //是否需要提醒
+  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
+  }
+)
+
 // Session 表
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
@@ -73,18 +89,3 @@ export const users = sqliteTable('users', {
   updatedAt: text('updated_at').notNull(),
 })
 
-// 健康记录表
-export const healthRecords = sqliteTable('health_records', {
-  id: text('id').primaryKey(),
-  elderId: text('elder_id').notNull().references(() => elders.id, { onDelete: 'cascade'}),
-  caregiverId: text('caregiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }), //护理人员ID
-  bloodPressure: text('blood_pressure'), //血压
-  bloodSugar: integer('blood_sugar'), //血糖
-  heartRate: integer('heart_rate'), //心率
-  temperature: integer('temperature'), //体温
-  weight: integer('weight'),
-  notes: text('notes'), //健康记录备注
-  alert: integer('alert').default(0), //是否需要提醒
-  createdAt: text('created_at').notNull().$defaultFn(() => new Date().toISOString()),
-  }
-)
