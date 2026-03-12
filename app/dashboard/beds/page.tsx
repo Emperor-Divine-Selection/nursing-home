@@ -1,9 +1,6 @@
 import { getAllBeds } from "@/actions/beds";
 import AddBed from "@/components/AddBed";
 
-
-export const revalidate = 300;
-
 export default async function BedsPage() {
   try {
     const { data: beds, success } = await getAllBeds();

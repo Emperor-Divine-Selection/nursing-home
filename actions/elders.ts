@@ -2,7 +2,8 @@
 
 import { db } from "@/lib/db"
 import { elders, beds, rooms } from "@/lib/schema"
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 // 添加老人
 export async function addElder(formData: FormData) {
@@ -18,92 +19,120 @@ export async function addElder(formData: FormData) {
       medicalHistory: formData.get('medicalHistory') as string || null,
       status: 'active' as const,
       admittedAt: new Date().toISOString(),
-    } as const;  // 加上 as const
+    }
 
-    await db.insert(elders).values(values);
+    // 如果选择了床位 → 占用床位
+    if (values.bedId) {
+      await db.update(beds)
+        .set({ status: 'occupied' })
+        .where(eq(beds.id, values.bedId))
+    }
 
-    return { success: true, message: '添加成功' };
+    await db.insert(elders).values(values)
+
+    // 页面刷新
+    revalidatePath('/dashboard/elders')
+    revalidatePath('/dashboard/beds')
+
+    return { success: true, message: '添加成功' }
   } catch (error) {
-    console.error('添加失败:', error);
-    return { success: false, error: '添加失败' };
+    console.error('添加失败:', error)
+    return { success: false, error: '添加失败' }
   }
 }
 
 // 删除老人
-export async function deleteElder(id: string) { 
-
+export async function deleteElder(id: string) {
   try {
-    await db.delete(elders).where(eq(elders.id, id));
-    return { success: true,message:'删除成功' };
-  } catch (error) {
-    console.error('删除失败:', error);
-    return { success: false, error: '删除失败' };
-  }
+    await db.delete(elders).where(eq(elders.id, id))
 
+    // 页面刷新
+    revalidatePath('/dashboard/elders')
+    revalidatePath('/dashboard/beds')
+
+    return { success: true, message: '删除成功' }
+  } catch (error) {
+    console.error('删除失败:', error)
+    return { success: false, error: '删除失败' }
+  }
 }
 
+// 更新老人
 export async function updateElder(
-  id: string, 
+  id: string,
   data: {
-    name?: string;
-    age?: number;
-    gender?: 'male' | 'female' | 'unknown';
-    roomId?: string | null; 
-    bedId?: string | null; 
-    phone?: string | null; 
-    emergencyContact?: string;
-    medicalHistory?: string | null; 
-    status?: 'active' | 'discharged'; 
-    dischargedAt?: string | null;
+    name?: string
+    age?: number
+    gender?: 'male' | 'female' | 'unknown'
+    roomId?: string | null
+    bedId?: string | null
+    phone?: string | null
+    emergencyContact?: string
+    medicalHistory?: string | null
+    status?: 'active' | 'discharged'
+    dischargedAt?: string | null
   }
 ) {
   try {
-    console.log('更新数据:', data);
-      await db.transaction( async (tx) => { 
-       //获取当前老人的数据
-       const [currentElder] = await tx.select().from(elders).where(eq(elders.id, id));
-       //更新老人最后修改时间
-       const updatedDate = {...data, updatedAt: new Date().toISOString()}
-       //判断是否出院
-       if (data.status === 'discharged' && !data.dischargedAt) { 
-         //出院时间
-         updatedDate.dischargedAt = new Date().toISOString();
-       }else if (data.status === 'active' && data.dischargedAt) { 
-         //删除出院时间
-         updatedDate.dischargedAt = null;
-      }
-      //如果设置了新床位，更新新床位状态为occupied
-      if (data.bedId) { 
-        await tx.update(beds)
-                .set({status: 'occupied'})
-                .where(eq(beds.id, data.bedId))
-                .run();
-      }
-      //如果老人原来有床位且现在没床位了或换了新床位，那么把原来的床位状态改回 available
-      if(currentElder?.bedId && (!data.bedId || data.bedId !== currentElder.bedId)){
-        await tx.update(beds)
-                .set({status: 'available'})
-                .where(eq(beds.id, currentElder.bedId))
-                .run();
-      }
-      await tx.update(elders)
-            .set(updatedDate)
-            .where(eq(elders.id, id))
-            .run();
-      })
+    db.transaction((tx) => {
+      // 当前老人
+      const [currentElder] = tx
+        .select()
+        .from(elders)
+        .where(eq(elders.id, id))
+        .all()
 
-    return { success: true, message: '更新成功' };
+      const updatedData = {
+        ...data,
+        updatedAt: new Date().toISOString(),
+      }
+
+      // 出院逻辑
+      if (data.status === 'discharged' && !data.dischargedAt) {
+        updatedData.dischargedAt = new Date().toISOString()
+      } else if (data.status === 'active') {
+        updatedData.dischargedAt = null
+      }
+
+      // 新床位 → 占用
+      if (data.bedId) {
+        tx.update(beds)
+          .set({ status: 'occupied' })
+          .where(eq(beds.id, data.bedId))
+          .run()
+      }
+
+      // 原床位 → 释放
+      if (currentElder?.bedId && currentElder.bedId !== data.bedId) {
+        tx.update(beds)
+          .set({ status: 'available' })
+          .where(eq(beds.id, currentElder.bedId))
+          .run()
+      }
+
+      // 更新老人
+      tx.update(elders)
+        .set(updatedData)
+        .where(eq(elders.id, id))
+        .run()
+    })
+
+    // 页面刷新
+    revalidatePath('/dashboard/elders')
+    revalidatePath('/dashboard/beds')
+
+    return { success: true, message: '更新成功' }
   } catch (error) {
-    console.error('更新失败:', error);
-    return { success: false, error: '更新失败' };
+    console.error('更新失败:', error)
+    return { success: false, error: '更新失败' }
   }
 }
 
-// 查询老人
+// 获取单个老人（无缓存）
 export async function getElder(id: string) {
-  
   try {
-    const result = await db.select({
+    const result = await db
+      .select({
         id: elders.id,
         name: elders.name,
         age: elders.age,
@@ -115,56 +144,49 @@ export async function getElder(id: string) {
         admittedAt: elders.admittedAt,
         medicalHistory: elders.medicalHistory,
         emergencyContact: elders.emergencyContact,
-        dischargedAt: elders.dischargedAt
+        dischargedAt: elders.dischargedAt,
+      })
+      .from(elders)
+      .leftJoin(beds, eq(elders.bedId, beds.id))
+      .leftJoin(rooms, eq(beds.roomId, rooms.id))
+      .where(eq(elders.id, id))
 
-      }).from(elders)
-        .leftJoin(beds, and(eq(elders.bedId, beds.id)))
-        .leftJoin(rooms, and(eq(beds.roomId, rooms.id)))
-        .where(eq(elders.id, id));
-    const elder = result[0];
+    const elder = result[0]
 
-    if (!elder.room) {
-      elder.room = null;
-    }
-    
-    if (!elder) {
-      return { success: false, error: '老人不存在' };
-    }
-    
-    return { success: true, data: elder };
+    if (!elder) return { success: false, error: '老人不存在' }
+    return { success: true, data: elder }
   } catch (error) {
-    console.error('查询失败:', error);
-    return { success: false, error: '查询失败' };
+    console.error('查询失败:', error)
+    return { success: false, error: '查询失败' }
   }
-
 }
 
-
-// 获取所有老人
-export async function getAllElders() { 
+// 获取所有老人（无缓存）
+export async function getAllElders() {
   try {
-    const result = await db.select({
-      id: elders.id,
-      name: elders.name,
-      age: elders.age,
-      gender: elders.gender,
-      phone: elders.phone,
-      status: elders.status,
-      roomNumber: rooms.roomNumber,  // ← 关键：房间号来自rooms表
-      bedNumber: beds.bedNumber,     // ← 关键：床位号来自beds表
-      admittedAt: elders.admittedAt,
-      medicalHistory: elders.medicalHistory,
-      emergencyContact: elders.emergencyContact,
-      dischargedAt: elders.dischargedAt,
-    })
-    .from(elders)
-    .leftJoin(beds, eq(elders.bedId, beds.id))      // 先连接床位表
-    .leftJoin(rooms, eq(beds.roomId, rooms.id))    // 再连接房间表
-    .orderBy(elders.createdAt);
-    
-    return { success: true, data: result };
+    const result = await db
+      .select({
+        id: elders.id,
+        name: elders.name,
+        age: elders.age,
+        gender: elders.gender,
+        phone: elders.phone,
+        status: elders.status,
+        roomNumber: rooms.roomNumber,
+        bedNumber: beds.bedNumber,
+        admittedAt: elders.admittedAt,
+        medicalHistory: elders.medicalHistory,
+        emergencyContact: elders.emergencyContact,
+        dischargedAt: elders.dischargedAt,
+      })
+      .from(elders)
+      .leftJoin(beds, eq(elders.bedId, beds.id))
+      .leftJoin(rooms, eq(beds.roomId, rooms.id))
+      .orderBy(elders.createdAt)
+
+    return { success: true, data: result }
   } catch (error) {
-    console.error('查询失败:', error);
-    return { success: false, error: '查询失败' };
+    console.error('查询失败:', error)
+    return { success: false, error: '查询失败' }
   }
 }

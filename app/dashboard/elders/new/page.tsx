@@ -107,7 +107,7 @@ export default function addEldersPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
               <option value="">请选择房间</option>
               {rooms.map((room) => (
-               <option key={room.id} value={room.roomNumber}>{room.roomNumber}</option>
+               <option key={room.id} value={room.id}>{room.roomNumber}</option>
                 ))}
             </select>
           </div>

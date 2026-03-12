@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "0c5b49e7-50f3-401c-8b85-57a6d0e7debb",
+  "id": "e56dc7c0-81ec-4aeb-b858-7016100ff5ff",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "beds": {
@@ -14,8 +14,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "room_number": {
-          "name": "room_number",
+        "room_id": {
+          "name": "room_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -27,14 +27,6 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'standard'"
         },
         "status": {
           "name": "status",
@@ -59,8 +51,31 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
+      "indexes": {
+        "unique_room_bed": {
+          "name": "unique_room_bed",
+          "columns": [
+            "room_id",
+            "bed_number"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "beds_room_id_rooms_id_fk": {
+          "name": "beds_room_id_rooms_id_fk",
+          "tableFrom": "beds",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -213,11 +228,11 @@
           "autoincrement": false,
           "default": "'unknown'"
         },
-        "room": {
-          "name": "room",
+        "room_id": {
+          "name": "room_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "bed_id": {
@@ -285,8 +300,29 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "elders_bed_id_unique": {
+          "name": "elders_bed_id_unique",
+          "columns": [
+            "bed_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
+        "elders_room_id_rooms_id_fk": {
+          "name": "elders_room_id_rooms_id_fk",
+          "tableFrom": "elders",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
         "elders_bed_id_beds_id_fk": {
           "name": "elders_bed_id_beds_id_fk",
           "tableFrom": "elders",
@@ -297,8 +333,8 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onDelete": "set null",
+          "onUpdate": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -416,6 +452,52 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "rooms": {
+      "name": "rooms",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "room_number": {
+          "name": "room_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "rooms_room_number_unique": {
+          "name": "rooms_room_number_unique",
+          "columns": [
+            "room_number"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

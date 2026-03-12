@@ -1,13 +1,14 @@
 CREATE TABLE `beds` (
 	`id` text PRIMARY KEY NOT NULL,
-	`room_number` text NOT NULL,
+	`room_id` text NOT NULL,
 	`bed_number` text NOT NULL,
-	`type` text DEFAULT 'standard' NOT NULL,
 	`status` text DEFAULT 'available' NOT NULL,
 	`created_at` text NOT NULL,
-	`updated_at` text NOT NULL
+	`updated_at` text NOT NULL,
+	FOREIGN KEY (`room_id`) REFERENCES `rooms`(`id`) ON UPDATE cascade ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `unique_room_bed` ON `beds` (`room_id`,`bed_number`);--> statement-breakpoint
 CREATE TABLE `care_records` (
 	`id` text PRIMARY KEY NOT NULL,
 	`content` text NOT NULL,
@@ -29,7 +30,7 @@ CREATE TABLE `elders` (
 	`name` text NOT NULL,
 	`age` integer NOT NULL,
 	`gender` text DEFAULT 'unknown' NOT NULL,
-	`room` text NOT NULL,
+	`room_id` text,
 	`bed_id` text,
 	`phone` text,
 	`emergency_contact` text NOT NULL,
@@ -39,9 +40,11 @@ CREATE TABLE `elders` (
 	`discharged_at` text,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL,
-	FOREIGN KEY (`bed_id`) REFERENCES `beds`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`room_id`) REFERENCES `rooms`(`id`) ON UPDATE cascade ON DELETE set null,
+	FOREIGN KEY (`bed_id`) REFERENCES `beds`(`id`) ON UPDATE cascade ON DELETE set null
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `elders_bed_id_unique` ON `elders` (`bed_id`);--> statement-breakpoint
 CREATE TABLE `health_records` (
 	`id` text PRIMARY KEY NOT NULL,
 	`elder_id` text NOT NULL,
@@ -58,6 +61,14 @@ CREATE TABLE `health_records` (
 	FOREIGN KEY (`caregiver_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `rooms` (
+	`id` text PRIMARY KEY NOT NULL,
+	`room_number` text NOT NULL,
+	`created_at` text NOT NULL,
+	`updated_at` text NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `rooms_room_number_unique` ON `rooms` (`room_number`);--> statement-breakpoint
 CREATE TABLE `sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
