@@ -53,8 +53,8 @@ export default function Dashboard() {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">仪表盘</h1>
+      <main className="container mx-auto mt-4">
+        <h1 className="text-3xl font-bold text-gray-900 text-center my-4 ">仪表盘</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"> 
           <StatCard title="在住老人" 
             value={`${stats?.residentCount || 0}`}

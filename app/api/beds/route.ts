@@ -21,9 +21,8 @@ export async function GET(request: NextRequest) {
     const bedResult = await db
       .select({
         id: beds.id,
-        roomNumber: beds.roomNumber,
+        roomNumber: beds.roomId,
         bedNumber: beds.bedNumber,
-        type: beds.type,
         status: beds.status,
         createdAt: beds.createdAt,
         updatedAt: beds.updatedAt,

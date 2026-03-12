@@ -1,5 +1,5 @@
 import { getAllBeds } from "@/actions/beds";
-import AddBed from "@/components/AddBed";
+import AddBed from "@/components/Beds/AddBed";
 
 export default async function BedsPage() {
   try {
@@ -15,9 +15,9 @@ export default async function BedsPage() {
     }
   
     return (
-      <div className="p-6">
+      <div className="">
         {/* 传递数据给客户端组件 */}
-        <AddBed initialBeds={beds? beds : []} />
+        <AddBed initialBeds={beds} />
       </div>
     );
     

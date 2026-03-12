@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "@/lib/db"
-import { beds, rooms } from "@/lib/schema"
+import { beds, rooms,elders } from "@/lib/schema"
 import { and, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
@@ -161,3 +161,30 @@ export async function deleteBed(id: string) {
     return { success: false, error: '删除失败' }
   }
 }
+
+//修改床位状态或房号
+export async function updateBedStatusOrRoom(formData: FormData,bedId: string) {
+    try {
+      //
+      const roomId = formData.get('roomId') as string;
+      const bedStatus = formData.get('bedStatus') as 'available' | 'occupied' | 'maintenance' | 'reserved';
+      const elderOccupied = await db.select().from(elders).leftJoin(beds, eq(elders.bedId, beds.id)).where(and(eq(elders.bedId, bedId), eq(beds.status, 'occupied')))
+      //如果已经有老人占用，就不能修改状态为占用以外的状态
+      if (elderOccupied.length > 0) {
+        return { success: false, error: '该床位已经被老人占用' }
+      }
+      if (roomId && bedStatus) {
+        await db.update(beds).set({
+          roomId,
+          status: bedStatus,
+          updatedAt: new Date().toISOString()
+        }).where(eq(beds.id, bedId))
+      }
+      
+      revalidatePath('/dashboard/beds')
+      return { success: true, message: '更新成功' }
+    } catch (error) {
+      console.error('更新失败:', error)
+      return { success: false, error: '更新失败' }
+    }
+  }
