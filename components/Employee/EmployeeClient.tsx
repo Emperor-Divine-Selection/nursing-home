@@ -22,17 +22,6 @@ export default function EmployeeClient({ employees = [] }: EmployeeClientProps) 
 
   return (
     <div className="p4">
-      <div className="flex justify-between items-center">
-        <p className="text-gray-500">
-          {employees.length}个员工
-        </p>
-        <div>
-        <button 
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors mr-1">
-            增加员工
-        </button>
-        </div>
-      </div>
       <div className="relative">
         <input type="text"
           placeholder="按姓名/邮箱搜索..."

@@ -3,10 +3,14 @@
 import { users } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { success } from 'zod'
 
 // 辅助函数：获取角色
-export async function getUserRoleById(userId: string) {
+export async function getUserRoleByUserId(userId: string | null) {
   try {
+    if (!userId) {
+      return { success: false, error: '用户ID不能为空' }
+    }
     const user = await db
       .select({ role: users.role })
       .from(users)
@@ -41,7 +45,7 @@ export async function updateUserRole(
   newRole: 'admin' | 'department_head' | 'caregiver'
 ) {
   try {
-    const auth = await getUserRoleById(authId)
+    const auth = await getUserRoleByUserId(authId)
     if (!auth.success || auth.data?.role !== 'admin') {
       return { success: false, error: auth.error || '验证用户失败' }
     }
@@ -58,10 +62,29 @@ export async function updateUserRole(
   }
 }
 
+//更新员工信息
+export async function updateUserInfo(formDare:FormData){
+
+  try{
+    const result = await db.update(users)
+                           .set({role: formDare.get('role') as string,
+                                 name: formDare.get('username') as string})
+                           .where(eq(users.email, formDare.get('email') as string))
+    if (result.changes === 0) {
+      return { success: false, error: '用户不存在或更新失败' }
+    }
+    return { success: true, data: { message: '员工信息更新成功' } }                       
+  }catch(error){
+    console.log('更新员工信息失败:',error)
+    return { success:false, error: error instanceof Error ? error.message : String(error)}
+  }
+
+}
+
 // 删除员工
 export async function deleteUser(authId: string, userId: string) {
   try {
-    const auth = await getUserRoleById(authId)
+    const auth = await getUserRoleByUserId(authId)
     if (!auth.success || auth.data?.role !== 'admin') {
       return { success: false, error: auth.error || '验证用户失败' }
     }
