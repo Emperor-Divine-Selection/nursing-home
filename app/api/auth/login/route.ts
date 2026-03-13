@@ -4,7 +4,6 @@ import { db } from '@/lib/db'
 import { users, sessions } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
-import { cookies } from 'next/headers'
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,23 +43,24 @@ export async function POST(req: NextRequest) {
       createdAt
     })
 
-    // 设置 HTTP-only Cookie
-    const cookieStore = await cookies()
-    cookieStore.set('session_id', sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60
-    })
-
-    return NextResponse.json({
+  // 设置 HTTP-only Cookie
+    const response = NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         role: user.role
       }
     })
+
+    response.cookies.set('session_id', sessionId, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
