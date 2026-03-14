@@ -10,6 +10,11 @@
 !.yarn/releases
 !.yarn/versions
 
+//database
+*.db
+*.sqlite
+*.sql
+
 # testing
 /coverage
 
