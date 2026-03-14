@@ -10,12 +10,12 @@
 !.yarn/releases
 !.yarn/versions
 
-//environment
+# environment
 .env
 .env.local
 .env.production
 
-//database
+# database
 *.db
 *.sqlite
 *.sql
