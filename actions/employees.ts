@@ -1,9 +1,9 @@
 'use server'
 
-import { users } from '@/lib/schema'
+import { users,healthRecords,careRecords } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { success } from 'zod'
+import { count } from 'drizzle-orm'
 
 // 辅助函数：获取角色
 export async function getUserRoleByUserId(userId: string | null) {
@@ -28,9 +28,22 @@ export async function getUserRoleByUserId(userId: string | null) {
 }
 
 // 获取员工列表
-export async function getEmployees() {
+export async function getEmployeesList() {
   try {
-    const employeeList = await db.select().from(users)
+    const employeeList = await db.select(
+      {
+        id: users.id,
+        name: users.name,
+        role: users.role,
+        email: users.email,
+        createdAt: users.createdAt,
+        careRecordCount: count(careRecords.id).as('careRecordCount'),
+        healthRecordCount: count(healthRecords.id).as('healthRecordCount'),
+      }
+    ).from(users)
+     .leftJoin(healthRecords, eq(users.id, healthRecords.caregiverId))
+     .leftJoin(careRecords, eq(users.id, careRecords.caregiverId))
+     .groupBy(users.id)
     return { success: true, data: employeeList }
   } catch (error) {
     console.error('获取员工列表失败:', error)
@@ -63,13 +76,16 @@ export async function updateUserRole(
 }
 
 //更新员工信息
-export async function updateUserInfo(formDare:FormData){
+export async function updateUserInfo(formDare:FormData,useId:string){
 
   try{
+    const authCheck = await getUserRoleByUserId(useId)
+    if (!authCheck.success || authCheck.data?.role !== 'admin') {
+      return { success: false, error: authCheck.error || '用户无此权限' }
+    }
     const result = await db.update(users)
-                           .set({role: formDare.get('role') as string,
-                                 name: formDare.get('username') as string})
-                           .where(eq(users.email, formDare.get('email') as string))
+                           .set({role: formDare.get('role') as string})
+                           .where(eq(users.id, formDare.get('id') as string))
     if (result.changes === 0) {
       return { success: false, error: '用户不存在或更新失败' }
     }
@@ -82,7 +98,7 @@ export async function updateUserInfo(formDare:FormData){
 }
 
 // 删除员工
-export async function deleteUser(authId: string, userId: string) {
+export async function deleteUser(userId: string,authId: string) {
   try {
     const auth = await getUserRoleByUserId(authId)
     if (!auth.success || auth.data?.role !== 'admin') {
