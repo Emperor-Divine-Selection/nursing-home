@@ -1,14 +1,11 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
-// import Navbar from '@/components/Navbar'
+import { Inter } from 'next/font/google'
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
+export const metadata = {
   title: '医院管理系统',
-  description: '专业的医院管理平台',
+  description: '医院管理系统',
 }
+const inter = Inter({ subsets: ['latin'] })
 
 export default function RootLayout({
   children,
@@ -16,11 +13,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body className={inter.className}>
-        {/* <Navbar /> */}
-        <main>{children}</main>
-        </body>
+        {children}
+      </body>
     </html>
   )
 }
