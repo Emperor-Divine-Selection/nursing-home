@@ -26,9 +26,9 @@ export default function AddBed({ initialBeds = [] } : addBedProps){
     const [isModalOpenAboutDeleteBed, setisModalOpenAboutDeleteBed] = useState(false);
 
   return (
-    <div className="p-4">
+    <div className="p-6 max-w-7xl mx-auto">
             {/* 头部 */}
-            <header className="mb-4">
+            <header className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
                 床位管理
               </h1>

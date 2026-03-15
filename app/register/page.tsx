@@ -8,6 +8,7 @@ export default function Register() {
   const router = useRouter()
   
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -46,6 +47,7 @@ export default function Register() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username: formData.username,
           email: formData.email,
           password: formData.password
         })
@@ -85,6 +87,22 @@ export default function Register() {
           )}
 
           <div className="rounded-md shadow-sm space-y-4">
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                用户名
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="username"
+                autoComplete="username"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="请输入用户名"
+              />
+            </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 邮箱

@@ -49,12 +49,6 @@ export default function EmployeeClient({ employees = [] }: EmployeeClientProps) 
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* 页面标题 */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">员工管理</h1>
-        <p className="text-gray-600">查看和管理所有员工信息及工作统计</p>
-      </div>
-
       {/* 搜索和统计区域 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { username, email, password } = await request.json()
 
     // 验证必填字段
     if (!email || !password) {
@@ -33,6 +33,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 验证用户名（如果提供）
+    if (!username) {
+      return NextResponse.json(
+        { error: '用户名不能为空' },
+        { status: 400 }
+      )
+    }
+    
+    // 验证用户名是否存在
+    const existingUsername = await db.query.users.findFirst({
+      where: eq(users.name, username)
+    })
+
+    if (existingUsername) {
+      return NextResponse.json(
+        { error: '该用户名已被使用' },
+        { status: 400 }
+      )
+    }
+
     // 检查邮箱是否已存在
     const existingUser = await db.query.users.findFirst({
       where: eq(users.email, email)
@@ -55,6 +75,7 @@ export async function POST(request: NextRequest) {
     // 创建用户
     await db.insert(users).values({
       id: userId,
+      name: username,
       email,
       password: hashedPassword,
       role: 'caregiver',

@@ -2,12 +2,24 @@
 
 import { careRecords } from "@/lib/schema";
 import { db } from "@/lib/db";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 interface ActionResult {
   success: boolean;
   message?: string;
   error?: string;
+}
+
+//查找所有护理记录
+export async function getAllCareRecords() { 
+  try {
+    const records = await db.select().from(careRecords).orderBy(desc(careRecords.createdAt))
+    return { success: true, data: records };
+  } catch (error) {
+    console.error('查询失败:', error);
+    return { success: false, error: '查询失败' };
+  }
 }
 
 // 创建护理记录
@@ -17,16 +29,15 @@ export async function createCareRecord(formatData: FormData): Promise<ActionResu
     await db.insert(careRecords).values({
       id: crypto.randomUUID(),
       content: formatData.get('content') as string,
-      type: formatData.get('type') as string || 'normal',
-      status: 'pending',
+      type: formatData.get('type') as 'normal' || 'advanced',
+      status: formatData.get('status') as 'pending' || 'completed' || 'cancelled',
       scheduledAt: formatData.get('scheduledAt') as string || null,
       completedAt: formatData.get('completedAt') as string || null,
       notes: formatData.get('notes') as string || '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
       elderId: formatData.get('elderId') as string,
       caregiverId: formatData.get('caregiverId') as string
   })
+    revalidatePath('/dashboard/care') // 重新验证护理记录页面
     return { success: true, message: '创建成功' };
   } catch (error) { 
     console.error('创建失败:', error);
@@ -72,7 +83,7 @@ export async function getTodayPendingCareRecords(){
 }
 
 //更新状态
-export async function updateCareRecordStatus(id: string, status: string) { 
+export async function updateCareRecordStatus(id: string, status: 'pending' | 'completed' | 'cancelled') { 
   
   try{
     await db.update(careRecords)
@@ -99,3 +110,82 @@ export async function deleteCareRecord(id: string) {
   }
 
 }
+
+
+interface careRecordProps {
+  page?: number;
+  limit?: number;
+  elderId?: string;
+  caregiverId?: string;
+  status?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+}
+//分页获取护理记录
+export async function getCareRecordsByPage(params: careRecordProps) {
+
+  try { 
+    const { page = 1, limit = 10, elderId, caregiverId, status, type, startDate, endDate } = params;
+    //计算偏移量
+    const offset = (page - 1) * limit;
+    //构建查询条件
+    const conditions = [];
+    if (elderId) conditions.push(eq(careRecords.elderId, elderId));
+    if (caregiverId) conditions.push(eq(careRecords.caregiverId, caregiverId));
+    if (status) conditions.push(eq(careRecords.status, status as 'pending' | 'completed' | 'cancelled'));
+    if (type) conditions.push(eq(careRecords.type, type as 'normal' | 'advanced'));
+    if (startDate) conditions.push(gte(careRecords.createdAt, new Date(startDate).toISOString()));
+    if (endDate) conditions.push(lte(careRecords.createdAt, new Date(endDate).toISOString()));
+    
+    //查询总数
+    let countQuery
+    if (conditions.length > 0) {
+      countQuery = await db.select({ count: sql<number>`count(*)` }).from(careRecords).where(and(...conditions));
+    } else {
+      countQuery = await db.select({ count: sql<number>`count(*)` }).from(careRecords);
+    }
+
+    //获取总数并处理undefined情况
+    const countResult = countQuery;
+    const totalCount = countResult[0]?.count ?? 0;
+
+    //查询当前页面的数据
+    let records
+    if (conditions.length > 0) { 
+      records = await db.select().from(careRecords)
+                        .where(and(...conditions))
+                        .orderBy(desc(careRecords.createdAt))
+                        .limit(limit)
+                        .offset(offset);
+    }else{
+      records = await db.select().from(careRecords)
+                        .orderBy(desc(careRecords.createdAt))
+                        .limit(limit)
+                        .offset(offset);
+    }
+
+    //计算总页数
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return { success: true, 
+             data: { records, //当前页数据
+                     pagination: {
+                                   currentPage:page, //当前页
+                                   totalPages, //总页数
+                                   totalRecords: totalCount, //总记录数
+                                   recordsPerPage: limit, //每页记录数
+                                   hasNextPage:page < totalPages, //是否有下一页
+                                   hasPreviousPage: page > 1 //是否有上一页
+                                  } 
+                    } 
+            };
+  }  
+    catch (error) { 
+    console.error('查询失败:', error);
+    return { success: false, error: '查询失败' };
+  }
+
+}
+
+

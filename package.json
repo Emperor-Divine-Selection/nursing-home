@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run init && next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "npm run init && next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "init": "tsx scripts/init-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

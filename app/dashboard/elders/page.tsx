@@ -131,10 +131,12 @@ export default function EldersPage() {
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-        老人管理目录
-      </h1>
+    <div className="p-6 max-w-7xl mx-auto">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">
+          老人管理
+        </h1>
+      </header>
       
       <div className="flex justify-between items-center mb-6">
         <div className="text-sm text-gray-500">

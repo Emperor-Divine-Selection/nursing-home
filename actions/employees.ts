@@ -130,3 +130,14 @@ export async function getUserById(userId: string) {
     return { success: false, error: error instanceof Error ? error.message : String(error) }
   }
 }
+
+//找到所有护工
+export async function getAllCaregivers() {
+  try {
+    const caregivers = await db.select().from(users).where(eq(users.role, 'caregiver'))
+    return { success: true, data: caregivers }
+  } catch (error) {
+    console.error('搜索所有护工失败:', error)
+    return { success: false, error: error instanceof Error ? error.message : String(error) }
+  }
+}
